@@ -6,8 +6,8 @@
 
 ## The people who studied with me🤝
 
-* 🤝형수
-* 🤝유진
+* 🤝형수[@oony97](https://github.com/oony97)
+* 🤝유진[@youjin99](https://github.com/youjin99)
 * 🤝진영
 * 🤝채영
 * 🤝채원
