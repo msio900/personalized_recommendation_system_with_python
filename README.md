@@ -38,7 +38,7 @@
 * 주요 추천 알고리즘
 * 추천 시스템 적용 사례
 
-### Section 2. 기본적인 추천 시스템 [👉](./Section02.md) | 코드자료[⌨️](./RecoSys/Section02.ipynb) [⤴️](#contents)
+### Section 2. 기본적인 추천 시스템 [👉](./Section02.md) | 코드자료[⌨️](RecoSys/Section02.ipynb) [⤴️](#contents)
 
 * 데이터 읽기
 * 인기제품 방식
