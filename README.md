@@ -33,12 +33,12 @@
 
 * 2/8(화) 강의 소개
 
-### Section 1. 추천 시스템 소개  [👉](./Section01.md)  |  목차로[⤴️](#contents) 
+### Section 1. 추천 시스템 소개  [👉](./Section01.md)  |  [⤴️](#contents) 
 
 * 주요 추천 알고리즘
 * 추천 시스템 적용 사례
 
-### Section 2. 기본적인 추천 시스템[⤴️](#contents)
+### Section 2. 기본적인 추천 시스템 [👉](./Section02.md) | 코드자료[⌨️](./RecoSys/Section02.ipynb) [⤴️](#contents)
 
 * 데이터 읽기
 * 인기제품 방식

@@ -4,6 +4,7 @@
 
 * 0_ 참고사항
 * 1_ 데이터 읽기
+* 2_ 인기제품 방식
 
 ## 0_ 참고사항
 
@@ -96,4 +97,36 @@
   166	346	1	886397596
   ```
 
+## 2_ 인기제품 방식
+
+* 개별 사용자 정보가 아닌 **Best-Seller** 제품을 추천함. 
+
+  * 가장 간단한 추천을 제공함.
+
+* 인기제품 방식 추천 방식 function
+
+  ```python
+  # 인기 제품 방식 추천 function
+  def recom_movie(n_items):
+      movie_mean = ratings.groupby(['movie_id'])['rating'].mean()
+      movie_sort = movie_mean.sort_values(ascending=False)[:n_items]
+      recom_movies = movies.loc[movie_sort.index]
+      recommendations = recom_movies['title']
+      return recommendations
   
+  recom_movie(5)
+  
+  # 실행 결과
+  # 인기 제품 방식 추천 function
+  def recom_movie(n_items):
+      movie_mean = ratings.groupby(['movie_id'])['rating'].mean()
+      movie_sort = movie_mean.sort_values(ascending=False)[:n_items]
+      recom_movies = movies.loc[movie_sort.index]
+      recommendations = recom_movies['title']
+      return recommendations
+  
+  recom_movie(5)
+  ```
+
+## 3_ 추천 시스템의 정확도 측정
+
