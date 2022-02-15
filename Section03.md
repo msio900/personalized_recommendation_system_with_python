@@ -152,3 +152,91 @@
   ```
 
   
+
+## 4_ 이웃을 고려한 CF
+
+* 단순 CF 알고리즘 개선 방법 → `KNN 방법` , `Thresholding 방법`
+
+  * KNN 방법 : 놓은 유사도를 가진 것들끼리 상위K를 정함.
+  * Thresholding 방법 : 미리 몇퍼센트를 정해두고 그 기준을 충족시키는 것을 집단으로 묶음.
+
+* CF_knn
+
+  ```python
+  def CF_knn(user_id, movie_id, neighbor_size=0):
+      if movie_id in ratings_matrix.columns:
+          sim_scores = user_similarity[user_id].copy()
+          movie_ratings = ratings_matrix[movie_id].copy()
+          none_rating_idx = movie_ratings[movie_ratings.isnull()].index
+          movie_ratings = movie_ratings.dropna()
+          sim_scores = sim_scores.drop(none_rating_idx)
+  
+          if neighbor_size == 0:
+              mean_rating = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+          else:
+              if len(sim_scores) > 1:
+                  neighbor_size = min(neighbor_size, len(sim_scores))
+                  sim_scores = np.array(sim_scores)
+                  movie_ratings = np.array(movie_ratings)
+                  user_idx = np.argsort(sim_scores)
+                  sim_scores = sim_scores[user_idx][-neighbor_size:]
+                  movie_ratings = movie_ratings[user_idx][-neighbor_size:]
+                  mean_rating = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+              else:
+                  mean_rating = 3.0
+      else:
+          mean_rating = 3.0
+      return mean_rating
+  
+  # 정확도 계산
+  score(CF_knn, neighbor_size=30)
+  
+  # 실행 결과
+  1.0108871337570486
+  ```
+
+  * 약간 개선됨을 알수 있음.
+
+* 영화를 추천
+
+  ```python
+  #### 실제 주어진 사용자에 대해 추천을 받는 기능 구현 ####
+  ratings_matrix = x_train.pivot(index='user_id',
+                                   columns='movie_id',
+                                   values='rating')
+  
+  matrix_dummy = ratings_matrix.copy().fillna(0)
+  user_similarity = cosine_similarity(matrix_dummy, matrix_dummy)
+  user_similarity = pd.DataFrame(user_similarity,
+                                  index=ratings_matrix.index,
+                                  columns=ratings_matrix.index)
+  def recom_movie(user_id, n_items, neighbor_size=30):
+      user_movie = ratings_matrix.loc[user_id].copy()
+      for movie in ratings_matrix.columns:
+          if pd.notnull(user_movie.loc[movie]):
+              user_movie.loc[movie] = 0
+  
+          else:
+              user_movie.loc[movie] = CF_knn(user_id, movie, neighbor_size)
+  
+  
+      movie_sort = user_movie.sort_values(ascending=False)[:n_items]
+      recom_movies = movies.loc[movie_sort.index]
+      recommendations = recom_movies['title']
+      return recommendations
+  
+  recom_movie(user_id=729, n_items=5, neighbor_size=30)
+  
+  # 실행 결과
+  <ipython-input-3-c5813698dafe>:92: RuntimeWarning: invalid value encountered in double_scalars
+    mean_rating = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+  movie_id
+  1293                         Star Kid (1997)
+  1467    Saint of Fort Washington, The (1993)
+  1189                      Prefontaine (1997)
+  1491                 Tough and Deadly (1995)
+  1466                Margaret's Museum (1995)
+  Name: title, dtype: object
+  ```
+
+  
