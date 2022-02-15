@@ -130,3 +130,39 @@
 
 ## 3_ 추천 시스템의 정확도 측정
 
+* 추천시스템의 성능 = `정확성`
+
+* `데이터`를 `훈련용 데이터`와 `테스트용 데이터`로 나눔.
+  $$
+  RMSE = \sqrt{{1 \over n} \sum_{i=1}^n({y_{i}-\hat y})^2}
+  $$
+
+* best seller 방식으로 구한 예측값을 `RMSE`로 정확도를 구함. 
+
+  ```python
+  # 100K의 영화 평점에 대해서 실제값과 best-seller 방식으로 구한 예측값의 RSME를 계산하는 코드
+  
+  import numpy as np
+  
+  def RMSE(Y_true, Y_pred):
+      return np.sqrt(np.mean((np.array(Y_true)-np.array(Y_pred))**2))
+  
+  # 정확도 계산
+  rmse = []
+  movie_mean = ratings.groupby(['movie_id'])['rating'].mean()
+  
+  for user in set(ratings.index):
+      Y_true = ratings.loc[user]['rating']
+      # best-seller 방식으로
+      Y_pred = movie_mean[ratings.loc[user]['movie_id']]  # movie_id에 대한 예측값.
+      accuracy = RMSE(Y_true, Y_pred)
+      rmse.append(accuracy)
+  
+  # RSME 계산
+  print(np.mean(rmse))
+  
+  # 실행 결과
+  0.996007224010567
+  ```
+
+  
