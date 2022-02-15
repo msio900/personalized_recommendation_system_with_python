@@ -356,3 +356,362 @@ Neighbor Size = 50 : RMSE = 1.0128
 Neighbor Size = 60 : RMSE = 1.0137
 ```
 
+## 사용자의 평가 경향을 고려한 CF
+
+![](./image/3_6-1.png)
+
+* 남자와 여자는 평가 경향을 고려했을때, 남자의 경우 평점을 높게, 여자의 평점을 낮게 평가해야함. 
+  * 예를 들면 
+  * 개인 평점 = 3.0 
+  * 집단 평점 = 4.0
+  * 집단 평균 = 3.5
+  * 3.5 - a (여기서 a는 집단과 사용자 사이의 평점 평균의 차이를 말함.)
+  * 1-3.5 = 2.5 라고 예상함.
+
+|          1단계          |                            2단계                             |                            3단계                             |                   4단계                   |
+| :---------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: | :---------------------------------------: |
+| 각 사용자 평점평균 계산 | 평점 → 각 사용자의 평균에서의 차이로 변환<br />평점 - 해당 사용자의 평점 평균 | 평점 편차의 예측값 계산<br />평가값 = 평점편차 * 다른 사용자 유사도 | 실제 예측값  = 평점편차 예측값 - 평점평균 |
+
+* `rating_mean` 확인
+
+  ```python
+  rating_mean = ratings_matrix.mean(axis=1)
+  rating_mean
+  
+  # 실행 결과
+  user_id
+  1      3.612745
+  2      3.673913
+  3      2.804878
+  4      4.277778
+  5      2.809160
+           ...   
+  939    4.243243
+  940    3.425000
+  941    4.058824
+  942    4.254237
+  943    3.412698
+  Length: 943, dtype: float64
+          
+  ratings_matrix
+  # 실행 결과
+  movie_id	1	2	3	4	5	6	7	8	9	10	...	1670	1672	1673	1674	1675	1677	1679	1680	1681	1682
+  user_id																					
+  1	NaN	3.0	NaN	3.0	3.0	NaN	4.0	1.0	NaN	3.0	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  2	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	2.0	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  3	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  4	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  5	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  ...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+  939	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	5.0	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  940	NaN	NaN	NaN	NaN	NaN	NaN	4.0	NaN	3.0	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  941	5.0	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  942	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  943	NaN	5.0	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  943 rows × 1646 columns
+  ```
+
+* 각 사용자의 평점 평균을 빼줌 : `rating_bias`
+
+  * 평점 평균의 편차
+
+  ```python
+  rating_bias = (ratings_matrix.T - rating_mean).T # T는 transforms
+  rating_bias
+  
+  # 실행 결과
+  movie_id	1	2	3	4	5	6	7	8	9	10	...	1669	1671	1672	1674	1675	1677	1678	1679	1681	1682
+  user_id																					
+  1	1.372549	-0.627451	0.372549	-0.627451	-0.627451	NaN	NaN	NaN	1.372549	-0.627451	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  2	0.255319	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	-1.744681	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  3	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  4	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  5	1.099237	0.099237	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  ...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+  939	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	0.729730	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  940	NaN	NaN	NaN	-1.525000	NaN	NaN	0.475	1.475	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  941	1.000000	NaN	NaN	NaN	NaN	NaN	0.000	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  942	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  943	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+  943 rows × 1643 columns
+  ```
+
+* 사용자 평가 경향을 고려한 함수 설정
+
+  ```python
+  # 사용자 평가 경향을 고려한 함수
+  def CF_knn_bias(user_id, movie_id, neighbor_size=0):
+      if movie_id in rating_bias.columns:
+          sim_scores = user_similarity[user_id].copy()
+          movie_ratings = rating_bias[movie_id].copy()
+          none_rating_idx = movie_ratings[movie_ratings.isnull()].index
+          movie_ratings = movie_ratings.drop(none_rating_idx)
+          sim_scores = sim_scores.drop(none_rating_idx)
+  
+          if neighbor_size == 0:
+              prediction = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+              prediction = prediction + rating_mean[user_id]
+          else:
+              if len(sim_scores) > 1:
+                  neighbor_size = min(neighbor_size, len(sim_scores))
+                  sim_scores = np.array(sim_scores)
+                  movie_ratings = np.array(movie_ratings)
+                  user_idx = np.argsort(sim_scores)
+                  sim_scores = sim_scores[user_idx][-neighbor_size:]
+                  movie_ratings = movie_ratings[user_idx][-neighbor_size:]
+                  prediction = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+                  prediction = prediction + rating_mean[user_id]
+  
+              else:
+                  prediction = rating_mean[user_id]
+      else:
+          prediction = rating_mean[user_id]
+      return prediction
+  
+  score(CF_knn_bias, 30)
+  
+  # 실행 결과
+  0.9476824815031243
+  ```
+
+## 7_ 그 외의 CF 정확도 개선 방법
+
+ ![](./image/3_7-1.png)
+
+* 신뢰도 가중치를 두기!
+
+  * 예측값은 민감하다. 그래서 직접 할수 있음.
+
+* counts 확인
+
+  ```python
+  rating_binary_1 = np.array(rating_matrix > 0).astype(float)
+  rating_binary_2 = rating_binary_1.T
+  
+  counts = np.dot(rating_binary_1, rating_binary_2)
+  counts = pd.DataFrame(counts,
+                          index = rating_matrix.index,
+                          columns=rating_matrix.index).fillna(0)
+  counts
+  
+  # 실행 결과
+  user_id	1	2	3	4	5	6	7	8	9	10	...	934	935	936	937	938	939	940	941	942	943
+  user_id																					
+  1	204.0	11.0	4.0	1.0	40.0	59.0	78.0	17.0	2.0	42.0	...	44.0	8.0	30.0	11.0	20.0	9.0	28.0	7.0	14.0	44.0
+  2	11.0	47.0	6.0	2.0	1.0	14.0	9.0	4.0	1.0	7.0	...	12.0	10.0	15.0	10.0	13.0	8.0	9.0	3.0	8.0	6.0
+  3	4.0	6.0	40.0	7.0	0.0	7.0	9.0	3.0	0.0	5.0	...	1.0	1.0	8.0	5.0	8.0	1.0	9.0	1.0	7.0	1.0
+  4	1.0	2.0	7.0	18.0	1.0	2.0	5.0	5.0	0.0	1.0	...	2.0	0.0	4.0	1.0	4.0	0.0	5.0	1.0	4.0	1.0
+  5	40.0	1.0	0.0	1.0	131.0	21.0	56.0	12.0	1.0	21.0	...	34.0	3.0	9.0	2.0	12.0	4.0	14.0	3.0	11.0	36.0
+  ...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+  939	9.0	8.0	1.0	0.0	4.0	6.0	9.0	4.0	0.0	5.0	...	4.0	9.0	12.0	8.0	17.0	37.0	3.0	3.0	1.0	6.0
+  940	28.0	9.0	9.0	5.0	14.0	32.0	42.0	11.0	3.0	33.0	...	26.0	4.0	13.0	8.0	8.0	3.0	80.0	5.0	11.0	12.0
+  941	7.0	3.0	1.0	1.0	3.0	7.0	5.0	3.0	2.0	4.0	...	2.0	5.0	11.0	4.0	7.0	3.0	5.0	16.0	3.0	3.0
+  942	14.0	8.0	7.0	4.0	11.0	23.0	30.0	6.0	2.0	8.0	...	17.0	2.0	7.0	5.0	6.0	1.0	11.0	3.0	59.0	15.0
+  943	44.0	6.0	1.0	1.0	36.0	29.0	64.0	15.0	0.0	20.0	...	26.0	8.0	15.0	5.0	17.0	6.0	12.0	3.0	15.0	126.0
+  943 rows × 943 columns
+  ```
+
+* 공통평가 영화 수 반영
+
+  ```python
+  rating_binary_1 = np.array(rating_matrix > 0).astype(float)
+  rating_binary_2 = rating_binary_1.T
+  
+  counts = np.dot(rating_binary_1, rating_binary_2)
+  counts = pd.DataFrame(counts,
+                          index = rating_matrix.index,
+                          columns=rating_matrix.index).fillna(0)
+  
+  def CF_knn_bias_sig(user_id, movie_id, neighbor_size=0):
+      if movie_id in rating_bias.columns:
+          sim_scores = user_similarity[user_id].copy()
+          movie_ratings = rating_bias[movie_id].copy()
+  
+          no_rating = movie_ratings.isnull()              # null값인 것들을 True로 설정
+          common_counts = counts[user_id]                 # 공통평가 영화수
+          low_significance = common_counts < SIG_LEVEL    # 공통평가 영화수가 미리 정해진 숫자보다 작은 사용자를 TRUE로 표시
+          none_rating_idx = movie_ratings[no_rating | low_significance].index
+  
+          movie_ratings = movie_ratings.drop(none_rating_idx)
+          sim_scores = sim_scores.drop(none_rating_idx)
+  
+          if neighbor_size == 0:
+              prediction = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+              prediction = prediction + rating_mean[user_id]
+          else:
+              if len(sim_scores) > MIN_RATINGS:
+                  neighbor_size = min(neighbor_size, len(sim_scores))
+                  sim_scores = np.array(sim_scores)
+                  movie_ratings = np.array(movie_ratings)
+                  user_idx = np.argsort(sim_scores)
+                  sim_scores = sim_scores[user_idx][-neighbor_size:]
+                  movie_ratings = movie_ratings[user_idx][-neighbor_size:]
+                  prediction = np.dot(sim_scores, movie_ratings) / sim_scores.sum()
+                  prediction = prediction +rating_mean[user_id]
+              else:
+                  prediction = rating_mean[user_id]
+      else:
+          prediction = rating_mean[user_id]
+      return prediction
+  
+  SIG_LEVEL = 3
+  MIN_RATINGS = 3
+  
+  score(CF_knn_bias_sig, 30)
+  
+  # 실행 결과
+  0.9390548282662213
+  ```
+
+* 개선 안
+
+  ```python
+      # 예측 값이 0.6이다. 
+      if prediction <= 1:
+          prediction = 1
+      elif prediction >= 5:
+          prediction = 5
+      # 5.2 >= 5 계산을 좀더 단순하게.
+  ```
+
+## 8_ 사용자 기반 CF와 아이템 기반 CF
+
+|        | MOVIE 1 | MOVIE 2 | MOVIE 3 | MOVIE 4 |
+| :----: | :-----: | :-----: | :-----: | :-----: |
+| User 1 |    4    |    3    |    5    |         |
+| User 2 |         |    2    |    1    |    2    |
+| User 3 |    1    |    5    |         |    3    |
+| User 4 |         |         |    4    |    5    |
+
+* 사용자 기반 CF와 아이템 기반 CF의 비교
+
+  | 사용자 기반 CF                                               | 아이템 기반 CF                                    |
+  | ------------------------------------------------------------ | ------------------------------------------------- |
+  | 데이터가 풍부한 경우 정확한 추천<br />결과에 대한 위험성 존재 | 계산이 빠름<br />업데이터에 대한 결과 영향이 적음 |
+
+  * 데이터 크기 적고, 사용자에 대한 정보가 있는 경우 **사용자 기반 CF** 적절
+  * 데이터 크기 크고, 충분한 정보가 없는 경우 **아이템 기반 CF** 적절
+
+* `item_similarity` 출력
+
+  ```python
+  rating_matrix_t = np.transpose(rating_matrix)
+  
+  matrix_dummy = rating_matrix_t.copy().fillna(0)
+  
+  item_similarity = cosine_similarity(matrix_dummy, matrix_dummy)
+  item_similarity = pd.DataFrame(item_similarity,
+                                  index = rating_matrix_t.index,
+                                  columns = rating_matrix_t.index)
+  item_similarity
+  # 실행 결과
+  movie_id	1	2	3	4	5	6	7	8	9	10	...	1670	1671	1672	1673	1674	1676	1677	1679	1680	1681
+  movie_id																					
+  1	1.000000	0.291130	0.260815	0.387949	0.188804	0.120631	0.455862	0.342607	0.361525	0.155987	...	0.0	0.0	0.055995	0.041996	0.0	0.00000	0.000000	0.0	0.0	0.055995
+  2	0.291130	1.000000	0.220749	0.393555	0.277135	0.045543	0.253821	0.192784	0.183228	0.119749	...	0.0	0.0	0.089642	0.000000	0.0	0.00000	0.000000	0.0	0.0	0.089642
+  3	0.260815	0.220749	1.000000	0.240068	0.182427	0.080277	0.263677	0.136441	0.209873	0.112720	...	0.0	0.0	0.000000	0.000000	0.0	0.00000	0.036037	0.0	0.0	0.000000
+  4	0.387949	0.393555	0.240068	1.000000	0.228883	0.058704	0.384913	0.333897	0.313956	0.169524	...	0.0	0.0	0.065310	0.000000	0.0	0.10885	0.043540	0.0	0.0	0.065310
+  5	0.188804	0.277135	0.182427	0.228883	1.000000	0.047729	0.233474	0.256426	0.190654	0.020761	...	0.0	0.0	0.000000	0.000000	0.0	0.00000	0.000000	0.0	0.0	0.000000
+  ...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+  1676	0.000000	0.000000	0.000000	0.108850	0.000000	0.000000	0.000000	0.077267	0.064889	0.097745	...	0.0	0.0	0.000000	0.000000	0.0	1.00000	0.000000	0.0	0.0	0.000000
+  1677	0.000000	0.000000	0.036037	0.043540	0.000000	0.000000	0.058887	0.096583	0.081111	0.000000	...	0.0	0.0	0.000000	0.000000	0.0	0.00000	1.000000	0.0	0.0	0.000000
+  1679	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	...	0.0	0.0	0.000000	0.000000	0.0	0.00000	0.000000	1.0	1.0	0.000000
+  1680	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	...	0.0	0.0	0.000000	0.000000	0.0	0.00000	0.000000	1.0	1.0	0.000000
+  1681	0.055995	0.089642	0.000000	0.065310	0.000000	0.000000	0.058887	0.000000	0.064889	0.000000	...	0.0	0.0	1.000000	0.000000	0.0	0.00000	0.000000	0.0	0.0	1.000000
+  1638 rows × 1638 columns
+  ```
+
+* 아이템 기반 CF
+
+  ```python
+  import os
+  import pandas as pd
+  import numpy as np
+  from sklearn.model_selection import train_test_split
+  
+  ##### 데이터 불러오기 및 데이터셋 만들기 #####
+  base_src = './Data'
+  u_user_src = os.path.join(base_src, 'u.user')
+  u_cols = ['user_id', 'age', 'sex', 'occupation', 'zip_code']
+  users = pd.read_csv(u_user_src,
+                      sep = '|',
+                      names = u_cols,
+                      encoding='latin-1')
+  users = users.set_index('user_id')
+  
+  u_item_src = os.path.join(base_src, 'u.item')
+  i_cols = ['movie_id', 'title','release date', 'video release date',
+              'IMDB URL', 'unknown', 'Action','Adventure','Animation',
+              'Children\'s', 'Comedy', 'Crime','Documentary','Drama','Fantasy',
+              'Film-Noir','Horror','Musical','Mystery','Romance','Sci-Fi','Thriller','War','Western']
+  movies = pd.read_csv(u_item_src,
+                      sep='|',
+                      names=i_cols,
+                      encoding='latin-1')
+  movies = movies.set_index('movie_id')
+  
+  u_data_src = os.path.join(base_src, 'u.data')
+  r_cols = ['user_id', 'movie_id', 'rating', 'timestamp']
+  ratings = pd.read_csv(u_data_src,
+                          sep='\t',
+                          names=r_cols,
+                          encoding='latin-1')
+  
+  def RMSE(y_true, y_pred):
+      return np.sqrt(np.mean((np.array(y_true)-np.array(y_pred))**2))
+  
+  def score(model):      # neighbor_size 지정 
+      # 테스트 데이터의 user_id와 movie_id간 pair를 맞춰 튜플형 원소 리스트데이터를 만듦.
+      id_pairs = zip(x_test['user_id'], x_test['movie_id'])
+      # 모든 사용자-영화 짝에서 대해서 주어진 예측 모델에 의해 예측값 계산 및 리스트형 데이터 생성
+      y_pred = np.array([model(user, movie) for (user, movie) in id_pairs])
+      # 실제 평점값
+      y_true = np.array(x_test['rating'])
+      return RMSE(y_true, y_pred)
+  
+  x = ratings.copy()
+  y = ratings['user_id']
+  
+  x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, stratify=y)
+  rating_matrix = x_train.pivot(index='user_id', columns='movie_id', values='rating')
+  
+  ########################################################################################
+  rating_matrix_t = np.transpose(rating_matrix)
+  
+  matrix_dummy = rating_matrix_t.copy().fillna(0)
+  
+  item_similarity = cosine_similarity(matrix_dummy, matrix_dummy)
+  item_similarity = pd.DataFrame(item_similarity,
+                                  index = rating_matrix_t.index,
+                                  columns = rating_matrix_t.index)
+  
+  def CF_IBCF(user_id, movie_id):
+      if movie_id in item_similarity.columns:
+          sim_scores = item_similarity[movie_id]
+          user_rating = rating_matrix_t[user_id]
+          none_rating_idx = user_rating[user_rating.isnull()].index
+          user_rating = user_rating.dropna()
+          sim_scores = sim_scores.drop(none_rating_idx)
+          mean_rating = np.dot(sim_scores, user_rating) / sim_scores.sum()
+      else:
+          mean_rating = 3.0
+      
+      return mean_rating
+  score(CF_IBCF)
+  
+  # 실행 결과
+  1.0196572278928668
+  ```
+
+  ## 9_ 추천 시스템의 성과측정지표
+
+  |                  1단계                  |                      2단계                       |                      3단계                       |
+  | :-------------------------------------: | :----------------------------------------------: | :----------------------------------------------: |
+  | 데이터를 train set과  test set으로 분리 | train set을 사용해서 학습하고, test set으로 평가 | 예산 평점과 실제 평점 차이를 계산 후 정확도 측정 |
+
+1. 각 아이템의 예상 평점과 실제 평점 차이
+   * RMSE → 연속적인
+2. 추천한 아이템과 사용자 실제 선택과 비교
+
+![](./image/3_9-1.png)
+
