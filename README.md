@@ -45,7 +45,7 @@
 * 추천 시스템의 정확도 측정
 * 사용자 집단별 추천
 
-### Section 3. 협업 필터링 추천 시스템 [👉](./Section02.md) [⤴️](#contents)
+### Section 3. 협업 필터링 추천 시스템 [👉](./Section03.md) | 코드자료[⌨️](./Recosys/Section03.ipynb)  [⤴️](#contents)
 
 * 협업 필터링의 원리
 * 유사도지표
@@ -57,7 +57,7 @@
 * 사용자 기반 CF와 아이템 기반 CF
 * 추천 시스템의 성과측정지표
 
-### Section 4. Matrix Factorization(MF) 기반 추천[⤴️](#contents)
+### Section 4. Matrix Factorization(MF) 기반 추천[👉](./Section03.md)[⤴️](#contents)
 
 * Matrix Factorization(MF) 방식의 원리
 * SGD(Stochastic Gradient Decent)를 사용한 MF 알고리즘
