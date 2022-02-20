@@ -82,3 +82,120 @@
 * 오버피팅을 어떻게 줄이는가?
   * 정규화 행을 어떻게 줄이는가?
   * weight만 주게 되면 너무 잘 
+
+## 3_ SGD를 사용한 MF 기본 알고리즘[📑](#contents)<a id='3'></a>
+
+* 세팅
+
+  ```python
+  import os
+  import numpy as np
+  import pandas as pd
+  
+  base_src =  './Data'
+  u_data_src = os.path.join(base_src, 'u.data')
+  r_cols = ['user_id', 'movie_id', 'rating', 'timestamp']
+  ratings = pd.read_csv(u_data_src,
+                          sep='\t',
+                          names=r_cols,
+                          encoding='latin-1')
+  
+  # timestamp 제거
+  ratings = ratings[['user_id', 'movie_id', 'rating']].astype(int)
+  ```
+
+* 구현
+
+  ```python
+  class MF():
+      def __init__(self, ratings, hyper_params):
+          self.R = np.array(ratings)
+          self.num_users, self.num_items = np.shape(self.R)
+          self.K = hyper_params['K']
+          self.alpha = hyper_params['alpha']
+          self.beta = hyper_params['beta']
+          self.iterations = hyper_params['iterations']
+          self.verbose = hyper_params['verbose']
+  
+      def rmse(self):
+          xs, ys = self.R.nonzero()
+          self.predictions = []
+          self.errors = []
+  
+          for x, y in zip(xs, ys):
+              prediction = self.get_prediction(x, y)
+              self.predictions.append(prediction)
+              self.errors.append(self.R[x, y] - prediction)
+          self.predictions = np.array(self.predictions)
+          self.errors = np.array(self.errors)
+  
+          return np.sqrt(np.mean(self.errors**2))
+  
+      def train(self):
+          self.P = np.random.normal(scale=1./self.K,                  # scale = 표준편차를 이야기함
+                                      size=(self.num_users, self.K))  # size 실제 유저수와 잠재요인의 갯수 = 크기 값
+          self.Q = np.random.normal(scale=1./self.K,
+                                      size = (self.num_items, self.K))
+  
+          self.b_u = np.zeros(self.num_users)
+          self.b_d = np.zeros(self.num_items)
+          self.b = np.mean(self.R[self.R.nonzero()])
+  
+          rows, columns = self.R.nonzero()
+          self.samples = [(i, j, self.R[i, j]) for i, j in zip(rows, columns)]
+  
+          training_process = []
+          for i in range(self.iterations):
+              np.random.shuffle(self.samples)
+              self.sgd()
+              rmse = self.rmse()
+              training_process.append((i+1, rmse)) # 몇번 째의 RMSE인지?
+              if self.verbose:
+                  if (i+1) % 10 == 0:
+                      print('Iteration : %d ; train RMSE = %.4f'%(i + 1, rmse))
+          return training_process
+  
+      def get_prediction(self, i, j):
+          prediction = self.b + self.b_u[i] +self.b_d[j] + self.P[i, :].dot(self.Q[j,].T)
+          return prediction
+      def sgd(self):
+          for i, j, r in self.samples:
+              prediction = self.get_prediction(i, j)
+              e = (r-prediction)
+  
+              self.b_u[i] += self.alpha * (e - (self.beta * self.b_u[i]))
+              self.b_d[j] += self.alpha * (e - (self.beta * self.b_d[j]))
+  
+              self.P[i,:] += self.alpha * ((e * self.Q[j,:] - (self.beta * self.P[i, :])))
+              self.Q[j,:] += self.alpha * ((e * self.Q[i,:] - (self.beta * self.Q[j, :])))
+  
+  R_temp = ratings.pivot(index='user_id',\
+                          columns='movie_id',
+                          values='rating').fillna(0)
+  
+  hyper_params = {
+      'K' : 30,
+      'alpha' : 0.001,
+      'beta' : 0.02,
+      'iterations' :100,
+      'verbose' : True
+  }
+  
+  mf = MF(R_temp, hyper_params)
+  
+  train_process = mf.train()
+  
+  # 실행 결과
+  Iteration : 10 ; train RMSE = 0.9588
+  Iteration : 20 ; train RMSE = 0.9380
+  Iteration : 30 ; train RMSE = 0.9291
+  Iteration : 40 ; train RMSE = 0.9241
+  Iteration : 50 ; train RMSE = 0.9208
+  Iteration : 60 ; train RMSE = 0.9185
+  Iteration : 70 ; train RMSE = 0.9166
+  Iteration : 80 ; train RMSE = 0.9150
+  Iteration : 90 ; train RMSE = 0.9135
+  Iteration : 100 ; train RMSE = 0.9120
+  ```
+
+  
