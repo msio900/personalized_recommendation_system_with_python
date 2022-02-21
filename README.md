@@ -57,7 +57,7 @@
 * 사용자 기반 CF와 아이템 기반 CF
 * 추천 시스템의 성과측정지표
 
-### Section 4. Matrix Factorization(MF) 기반 추천[👉](./Section03.md)[⤴️](#contents)
+### Section 4. Matrix Factorization(MF) 기반 추천[👉](./Section04.md)[⤴️](#contents)
 
 * Matrix Factorization(MF) 방식의 원리
 * SGD(Stochastic Gradient Decent)를 사용한 MF 알고리즘
