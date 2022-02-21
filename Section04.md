@@ -4,9 +4,11 @@
 
 * 0_ 들어가기 전에[✏️](#0)
 * 1_ Matrix Factorization(MF)방식의 원리[✏️](#1)
-* 2_ SQD(Stichastic Gradient Decent)를 사용한 MF 알고리즘[✏️](#2)
+* 2_ SGD(Stichastic Gradient Decent)를 사용한 MF 알고리즘[✏️](#2)
 * 3_ SGD를 사용한 MF 기본 알고리즘[✏️](#3)
 * 4_ train/test 분리 MF 알고리즘[✏️](#4)
+* 5_ MF의 최적 파라미터 찾기[✏️](#5)
+* 6_ MF와 SVD[✏️](#6)
 
 ## 0_ 들어가기 전에[📑](#contents)<a id='0'></a>
 
