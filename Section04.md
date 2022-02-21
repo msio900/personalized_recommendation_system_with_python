@@ -421,4 +421,318 @@
   3.3933323287310477
   ```
 
+## 5_ MF의 최적 파라미터 찾기[📑](#contents)<a id='5'></a>
+
+* 과적합`overfitting`을 막기 위해
+
+| 대략적인 최적의 K 위치 찾기 | →    | 대략적 K 주변 탐색으로, 최적 K 찾기 | →    | 주어진 K 통해 최적의 `iterations` 선택 |
+| --------------------------- | ---- | ----------------------------------- | ---- | -------------------------------------- |
+| 50 ~ 260, k = 10            |      | 50~70, k = 60                       |      | fix, k=63 iteration =123               |
+
+* 최적의 파리미터 찾는 학습
+
+  ```python
+  # 최적의 K 찾기
+  results = []
+  index = []
   
+  R_temp = ratings.pivot(index='user_id',
+                          columns='movie_id',
+                          values='rating').fillna(0)
+  for K in range(50, 261, 10):
+      print(f'K : {K}')
+      hyper_params = {
+          'K' : K,
+          'alpha' : 0.001,
+          'beta' : 0.02,
+          'iterations' : 100,
+          'verbose' : True
+      }
+      mf = NEW_MF(R_temp,
+                  hyper_params)
+      test_set = mf.set_test(ratings_test)
+      result = mf.test()
+      index.append(K)
+      results.append(result)
+      
+   # 실행 결과
+  K : 50
+  Iteration: 10 ; Train RMSE = 0.9669 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9417 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9305 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9239 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9195 ; Test RMSE = 0.9493
+  Iteration: 60 ; Train RMSE = 0.9160 ; Test RMSE = 0.9479
+  Iteration: 70 ; Train RMSE = 0.9129 ; Test RMSE = 0.9467
+  Iteration: 80 ; Train RMSE = 0.9097 ; Test RMSE = 0.9458
+  Iteration: 90 ; Train RMSE = 0.9060 ; Test RMSE = 0.9447
+  Iteration: 100 ; Train RMSE = 0.9012 ; Test RMSE = 0.9432
+  K : 60
+  Iteration: 10 ; Train RMSE = 0.9669 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9418 ; Test RMSE = 0.9623
+  Iteration: 30 ; Train RMSE = 0.9307 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9242 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9198 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9165 ; Test RMSE = 0.9479
+  Iteration: 70 ; Train RMSE = 0.9137 ; Test RMSE = 0.9469
+  Iteration: 80 ; Train RMSE = 0.9108 ; Test RMSE = 0.9461
+  Iteration: 90 ; Train RMSE = 0.9076 ; Test RMSE = 0.9451
+  Iteration: 100 ; Train RMSE = 0.9035 ; Test RMSE = 0.9440
+  K : 70
+  Iteration: 10 ; Train RMSE = 0.9670 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9419 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9308 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9244 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9201 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9169 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9143 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9117 ; Test RMSE = 0.9463
+  Iteration: 90 ; Train RMSE = 0.9089 ; Test RMSE = 0.9455
+  Iteration: 100 ; Train RMSE = 0.9055 ; Test RMSE = 0.9446
+  K : 80
+  Iteration: 10 ; Train RMSE = 0.9670 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9420 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9309 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9245 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9203 ; Test RMSE = 0.9493
+  Iteration: 60 ; Train RMSE = 0.9171 ; Test RMSE = 0.9479
+  Iteration: 70 ; Train RMSE = 0.9145 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9120 ; Test RMSE = 0.9461
+  Iteration: 90 ; Train RMSE = 0.9093 ; Test RMSE = 0.9453
+  Iteration: 100 ; Train RMSE = 0.9059 ; Test RMSE = 0.9443
+  K : 90
+  Iteration: 10 ; Train RMSE = 0.9670 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9420 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9310 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9247 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9205 ; Test RMSE = 0.9493
+  Iteration: 60 ; Train RMSE = 0.9174 ; Test RMSE = 0.9479
+  Iteration: 70 ; Train RMSE = 0.9149 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9126 ; Test RMSE = 0.9462
+  Iteration: 90 ; Train RMSE = 0.9101 ; Test RMSE = 0.9454
+  Iteration: 100 ; Train RMSE = 0.9071 ; Test RMSE = 0.9445
+  K : 100
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9421 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9311 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9247 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9206 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9175 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9151 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9129 ; Test RMSE = 0.9462
+  Iteration: 90 ; Train RMSE = 0.9105 ; Test RMSE = 0.9455
+  Iteration: 100 ; Train RMSE = 0.9077 ; Test RMSE = 0.9447
+  K : 110
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9421 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9311 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9248 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9207 ; Test RMSE = 0.9493
+  Iteration: 60 ; Train RMSE = 0.9177 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9153 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9131 ; Test RMSE = 0.9463
+  Iteration: 90 ; Train RMSE = 0.9108 ; Test RMSE = 0.9455
+  Iteration: 100 ; Train RMSE = 0.9081 ; Test RMSE = 0.9447
+  K : 120
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9421 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9312 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9249 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9207 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9178 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9154 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9132 ; Test RMSE = 0.9463
+  Iteration: 90 ; Train RMSE = 0.9110 ; Test RMSE = 0.9456
+  Iteration: 100 ; Train RMSE = 0.9083 ; Test RMSE = 0.9447
+  K : 130
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9312 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9249 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9208 ; Test RMSE = 0.9493
+  Iteration: 60 ; Train RMSE = 0.9179 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9155 ; Test RMSE = 0.9470
+  Iteration: 80 ; Train RMSE = 0.9134 ; Test RMSE = 0.9463
+  Iteration: 90 ; Train RMSE = 0.9113 ; Test RMSE = 0.9456
+  Iteration: 100 ; Train RMSE = 0.9088 ; Test RMSE = 0.9448
+  K : 140
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9312 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9250 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9209 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9180 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9157 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9136 ; Test RMSE = 0.9463
+  Iteration: 90 ; Train RMSE = 0.9116 ; Test RMSE = 0.9457
+  Iteration: 100 ; Train RMSE = 0.9092 ; Test RMSE = 0.9449
+  K : 150
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9312 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9250 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9209 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9180 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9158 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9138 ; Test RMSE = 0.9464
+  Iteration: 90 ; Train RMSE = 0.9118 ; Test RMSE = 0.9458
+  Iteration: 100 ; Train RMSE = 0.9096 ; Test RMSE = 0.9451
+  K : 160
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9313 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9250 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9210 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9181 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9159 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9139 ; Test RMSE = 0.9464
+  Iteration: 90 ; Train RMSE = 0.9120 ; Test RMSE = 0.9458
+  Iteration: 100 ; Train RMSE = 0.9099 ; Test RMSE = 0.9451
+  K : 170
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9313 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9251 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9210 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9182 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9160 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9141 ; Test RMSE = 0.9464
+  Iteration: 90 ; Train RMSE = 0.9122 ; Test RMSE = 0.9458
+  Iteration: 100 ; Train RMSE = 0.9101 ; Test RMSE = 0.9451
+  K : 180
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9422 ; Test RMSE = 0.9623
+  Iteration: 30 ; Train RMSE = 0.9313 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9251 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9211 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9182 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9160 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9141 ; Test RMSE = 0.9464
+  Iteration: 90 ; Train RMSE = 0.9123 ; Test RMSE = 0.9458
+  Iteration: 100 ; Train RMSE = 0.9103 ; Test RMSE = 0.9452
+  K : 190
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9623
+  Iteration: 30 ; Train RMSE = 0.9313 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9251 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9211 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9183 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9161 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9143 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9125 ; Test RMSE = 0.9459
+  Iteration: 100 ; Train RMSE = 0.9107 ; Test RMSE = 0.9453
+  K : 200
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9313 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9251 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9211 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9183 ; Test RMSE = 0.9481
+  Iteration: 70 ; Train RMSE = 0.9162 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9144 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9127 ; Test RMSE = 0.9459
+  Iteration: 100 ; Train RMSE = 0.9109 ; Test RMSE = 0.9454
+  K : 210
+  Iteration: 10 ; Train RMSE = 0.9671 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9212 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9184 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9162 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9144 ; Test RMSE = 0.9464
+  Iteration: 90 ; Train RMSE = 0.9127 ; Test RMSE = 0.9459
+  Iteration: 100 ; Train RMSE = 0.9109 ; Test RMSE = 0.9454
+  K : 220
+  Iteration: 10 ; Train RMSE = 0.9672 ; Test RMSE = 0.9806
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9212 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9184 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9163 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9145 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9128 ; Test RMSE = 0.9459
+  Iteration: 100 ; Train RMSE = 0.9111 ; Test RMSE = 0.9454
+  K : 230
+  Iteration: 10 ; Train RMSE = 0.9672 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9212 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9184 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9163 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9145 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9129 ; Test RMSE = 0.9459
+  Iteration: 100 ; Train RMSE = 0.9111 ; Test RMSE = 0.9454
+  K : 240
+  Iteration: 10 ; Train RMSE = 0.9672 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9212 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9184 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9163 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9146 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9130 ; Test RMSE = 0.9460
+  Iteration: 100 ; Train RMSE = 0.9113 ; Test RMSE = 0.9455
+  K : 250
+  Iteration: 10 ; Train RMSE = 0.9672 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9551
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9213 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9185 ; Test RMSE = 0.9481
+  Iteration: 70 ; Train RMSE = 0.9164 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9147 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9131 ; Test RMSE = 0.9460
+  Iteration: 100 ; Train RMSE = 0.9114 ; Test RMSE = 0.9454
+  K : 260
+  Iteration: 10 ; Train RMSE = 0.9672 ; Test RMSE = 0.9807
+  Iteration: 20 ; Train RMSE = 0.9423 ; Test RMSE = 0.9622
+  Iteration: 30 ; Train RMSE = 0.9314 ; Test RMSE = 0.9552
+  Iteration: 40 ; Train RMSE = 0.9252 ; Test RMSE = 0.9515
+  Iteration: 50 ; Train RMSE = 0.9213 ; Test RMSE = 0.9494
+  Iteration: 60 ; Train RMSE = 0.9185 ; Test RMSE = 0.9480
+  Iteration: 70 ; Train RMSE = 0.9164 ; Test RMSE = 0.9471
+  Iteration: 80 ; Train RMSE = 0.9147 ; Test RMSE = 0.9465
+  Iteration: 90 ; Train RMSE = 0.9131 ; Test RMSE = 0.9460
+  Iteration: 100 ; Train RMSE = 0.9115 ; Test RMSE = 0.9455
+  ```
+
+* `summary`확인
+
+  ```python
+  summary = []
+  for i in range(len(results)):
+      RMSE = []
+      for result in results[i]:
+          RMSE.append(result[2])
+      min = np.min(RMSE)
+      j = RMSE.index(min)
+      summary.append([index[i], j+1, RMSE[j]])
+  ```
+
+  
+
+![](./image/4_5-1.png)
+
+| 최적 파라미터 1 구하기 | →    | 최적 파라미터 2 구하기<br />(파라미터 1 고정) | →    | 최적 파라미터 3 구하기<br />(파라미터1, 2 고정) | →    | 최적 파리미터 4 구하기<br />(파리미터 1, 2, 3 고정) |
+| ---------------------- | ---- | --------------------------------------------- | ---- | ----------------------------------------------- | ---- | --------------------------------------------------- |
+
+## 6_ MF와 SVD[📑](#contents)<a id='6'></a>
+
+![](./image/4_6-1.png)
+
+* `MF`와 `SVD`(Singular Value Decomposition, 특이값 분해)
+  * `SVD`
+    * 3개의 행렬로 나눠줌. 
+    * 원래 행렬을 분해해서 3개의 행렬로 나눠준다음 다시 한개의 행렬로 만듦.
+    * null을 허용하지 않음.
+    * 0으로 대체하게되면...그냥 0으로 가까운 값으로 결과가 나옴.
+    * 차원 축소 -> 10000개 → 500개
+  * `MF`
+    * 2개의 행렬로 나눠줌.
+    * null을 0으로 대체 가능
+* 추천 시스템 분야에서는 `SVD`가 거의 사용되지 않음
+* `SVD++`  : `MF`를 개량해서 만든 개념
