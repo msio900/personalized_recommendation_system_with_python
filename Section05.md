@@ -61,4 +61,72 @@
   accuracy.rmse(prediction)
   ```
 
+
+## 2_ 알고리즘 비교
+
+| 알고리즘       |                                                              |
+| -------------- | ------------------------------------------------------------ |
+| `BaselineOnly` | 사용자의 평점 평균과 아이템의 평점평균을 모델화 해서 예측하는 알고리즘 |
+| `KNNWithMeans` | 사용자의 평가 경향까지 고려한 CF                             |
+| `SVD`          | mf 기반 알고리즘                                             |
+| `SVDpp`        | mf  기반 알고리즘을 이진 값으로 일종의 암묵적 평가까지 추가해서 고려한 알고리즘 |
+
+* 비교 구현
+
+  ```python
+  #비교에 필요한 Surprise 알고리즘
+  from surprise import BaselineOnly
+  from surprise import KNNWithMeans
+  from surprise import SVD
+  from surprise import SVDpp
   
+  # 정확도 측정 관련 모듈을 가져온다.
+  from surprise import accuracy
+  
+  # Dataset관련 모듈을 가져온다.
+  from surprise import Dataset
+  
+  # train/test set 분리 관련 모듈을 가져온다.
+  from surprise.model_selection import train_test_split
+  
+  # 결과를 그래프로 표시하기 위한 라이브러리
+  import matplotlib.pyplot as plt
+  
+  # MovieLens 100k 데이터 불러오기
+  data = Dataset.load_builtin(name=u'ml-100k')
+  
+  # train/test 0.75 : 0.25로 분리
+  
+  trainset, testset = train_test_split(data, test_size=0.25)
+  
+  algorithms = [BaselineOnly, KNNWithMeans, SVD, SVDpp]
+  
+  names = []
+  results = []
+  
+  for option in algorithms:
+      algo = option()
+      names.append(option.__name__)
+      algo.fit(trainset)
+      predictions = algo.test(testset)
+      results.append(accuracy.rmse(predictions))
+  names = np.array(names)
+  results = np.array(results)
+  
+  index = np.argsort(results)
+  plt.ylim(0.8, 1)
+  plt.plot(names[index], results[index])
+  results[index]
+  
+  # 실행 결과
+  Estimating biases using als...
+  RMSE: 0.9420
+  Computing the msd similarity matrix...
+  Done computing similarity matrix.
+  RMSE: 0.9512
+  RMSE: 0.9345
+  RMSE: 0.9208
+  array([0.92080759, 0.9345095 , 0.941986  , 0.95123484])
+  ```
+
+  ![](./image/5_2-1.png)
