@@ -66,7 +66,7 @@
 * MF의 최적 파라미터 찾기
 * MF와 SVD
 
-### Section 5. Surprise 패키지 사용[⤴️](#contents)
+### Section 5. Surprise 패키지 사용[👉](./Section05.md)[⤴️](#contents)
 
 * Surprise 기본 활용 방법
 * 알고리즘 비교
