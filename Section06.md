@@ -701,3 +701,342 @@
   ```
 
   ![](./image/6_3-3.png)
+
+## 6.4 딥러닝 모델에 변수 추가하기[📑](#contents)<a id='4'></a>
+
+* '직업' 변수를 추가한 딥러닝 모델
+
+  ```python
+  # csv 파일에서 불러오기
+  import pandas as pd
+  
+  #train set과 test set을 나누기 위한 라이브러리
+  from sklearn.model_selection import train_test_split
+  
+  #필요한 tensorflow 모듈들을 가져온다.
+  import tensorflow as tf
+  from tensorflow.keras import layers
+  from tensorflow.keras.models import Model
+  from tensorflow.keras.layers import Input, Embedding, Dot, Add, Flatten
+  from tensorflow.keras.regularizers import l2
+  from tensorflow.keras.optimizers import SGD, Adamax
+  from tensorflow.keras.layers import Dense, Concatenate, Activation
+  
+  ### Defining RMSE measure ###
+  # y_true, y_pred은 신경망에서 실제값, 예측값을 나타내는 Tensorflow/Keras 표준 변수
+  def RMSE(y_true, y_pred):
+    # Tensorflow의 math클래스에 미리 정의된
+    # 제곱근(sqrt), 평균(reduce_mean), 제곱(square) 함수를 통해 RMSE 계산
+    return tf.sqrt(tf.reduce_mean(tf.square(y_true-y_pred)))
+  
+  #DataFrame 형태로 데이터를 읽어온다.
+  r_cols = ['user_id', 'movie_id', 'rating', 'timestamp']
+  ratings = pd.read_csv('./Data/u.data', names=r_cols,  sep='\t',encoding='latin-1')
+  
+  ratings_train, ratings_test = train_test_split(ratings,
+                                                 test_size = 0.2,
+                                                 shuffle = True,
+                                                 random_state = 2021)
+  
+  #사용자(user) 데이터 가져오기 
+  u_cols = ["user_id","age",'sex',"occupation","zip_code"]
+  users = pd.read_csv('./Data/u.user',
+                      sep = '|',
+                      names = u_cols,
+                      encoding='latin-1')
+  #사용자 ID와 직업만 남긴다.
+  users = users[['user_id','occupation']]
+  
+  occupation = {} # 직업을 dict 형태로
+  def convert_occ(x):
+    if x in occupation:
+      return occupation[x]
+    else: 
+      occupation[x] = len(occupation) # 직업에 대해 인덱스를 부여 ex) {선생님 : 0}
+      return occupation[x]
+  
+  users['occupation'] = users['occupation'].apply(convert_occ)
+  
+  L = len(occupation) # bias term이 없기 때문에 +1 필요 X
+  
+  train_occ = pd.merge(ratings_train, users, on = 'user_id')['occupation']
+  test_occ = pd.merge(ratings_test, users, on = 'user_id')['occupation']
+  
+  #잠재요인 수 
+  K = 200
+  
+  #전체 평균 계산
+  mu = ratings_train.rating.mean()
+  
+  #사용자 아이디와 영화 아이디의 최댓값 -> 보통은 unique한 값의 개수 + 1로 해야함 
+  #1을 더하는 이유 : bias term 추가 고려
+  M = ratings.user_id.max() + 1
+  N = ratings.movie_id.max() + 1
+  
+  #kreas 모델 
+  user = Input(shape=(1,))
+  item = Input(shape=(1,))
+  
+  #Embedding
+  P_embedding = Embedding(M,K,embeddings_regularizer=l2())(user) #regularizer : 규제 -> 과적합 방지
+  Q_embedding = Embedding(N,K,embeddings_regularizer=l2())(item)
+  
+  #bias
+  user_bias = Embedding(M,1,embeddings_regularizer=l2())(user)
+  item_bias = Embedding(N,1,embeddings_regularizer=l2())(item)
+  
+  #앞과 뒤를 한줄로 붙이기위해 Flatten 수행 
+  P_embedding = Flatten()(P_embedding)
+  Q_embedding = Flatten()(Q_embedding)
+  
+  user_bias = Flatten()(user_bias)
+  item_bias = Flatten()(item_bias)
+  
+  #직업 변수 추가 
+  occ = Input(shape = (1,))
+  OCC_embedding = Embedding(L,3, embeddings_regularizer=l2())(occ)
+  OCC_layer = Flatten()(OCC_embedding) 
+  
+  R = Concatenate()([P_embedding, Q_embedding, user_bias, item_bias, OCC_layer])
+  
+  R = Dense(2048)(R) #노드가 2048개인 하나의 layer를 만든 후 R과 연결 
+  R = Activation('linear')(R) 
+  
+  R = Dense(256)(R)
+  R = Activation('linear')(R)
+  
+  R = Dense(1)(R) #출력 layer
+  
+  model = Model(inputs = [user, item, occ],outputs=R) # 직업이라는 변수가 추가됨.
+  model.compile(loss=RMSE,
+                optimizer=SGD(), #Adamax도 가능
+                metrics = [RMSE])
+  
+  model.summary()
+  
+  # 실행 결과
+  Model: "model_2"
+  __________________________________________________________________________________________________
+  Layer (type)                    Output Shape         Param #     Connected to                     
+  ==================================================================================================
+  input_5 (InputLayer)            [(None, 1)]          0                                            
+  __________________________________________________________________________________________________
+  input_6 (InputLayer)            [(None, 1)]          0                                            
+  __________________________________________________________________________________________________
+  input_7 (InputLayer)            [(None, 1)]          0                                            
+  __________________________________________________________________________________________________
+  embedding_8 (Embedding)         (None, 1, 200)       188800      input_5[0][0]                    
+  __________________________________________________________________________________________________
+  embedding_9 (Embedding)         (None, 1, 200)       336600      input_6[0][0]                    
+  __________________________________________________________________________________________________
+  embedding_10 (Embedding)        (None, 1, 1)         944         input_5[0][0]                    
+  __________________________________________________________________________________________________
+  embedding_11 (Embedding)        (None, 1, 1)         1683        input_6[0][0]                    
+  __________________________________________________________________________________________________
+  embedding_12 (Embedding)        (None, 1, 3)         63          input_7[0][0]                    
+  __________________________________________________________________________________________________
+  flatten_5 (Flatten)             (None, 200)          0           embedding_8[0][0]                
+  __________________________________________________________________________________________________
+  flatten_6 (Flatten)             (None, 200)          0           embedding_9[0][0]                
+  __________________________________________________________________________________________________
+  flatten_7 (Flatten)             (None, 1)            0           embedding_10[0][0]               
+  __________________________________________________________________________________________________
+  flatten_8 (Flatten)             (None, 1)            0           embedding_11[0][0]               
+  __________________________________________________________________________________________________
+  flatten_9 (Flatten)             (None, 3)            0           embedding_12[0][0]               
+  __________________________________________________________________________________________________
+  concatenate_1 (Concatenate)     (None, 405)          0           flatten_5[0][0]                  
+                                                                   flatten_6[0][0]                  
+                                                                   flatten_7[0][0]                  
+                                                                   flatten_8[0][0]                  
+                                                                   flatten_9[0][0]                  
+  __________________________________________________________________________________________________
+  dense_3 (Dense)                 (None, 2048)         831488      concatenate_1[0][0]              
+  __________________________________________________________________________________________________
+  activation_2 (Activation)       (None, 2048)         0           dense_3[0][0]                    
+  __________________________________________________________________________________________________
+  dense_4 (Dense)                 (None, 256)          524544      activation_2[0][0]               
+  __________________________________________________________________________________________________
+  activation_3 (Activation)       (None, 256)          0           dense_4[0][0]                    
+  __________________________________________________________________________________________________
+  dense_5 (Dense)                 (None, 1)            257         activation_3[0][0]               
+  ==================================================================================================
+  Total params: 1,884,379
+  Trainable params: 1,884,379
+  Non-trainable params: 0
+  __________________________________________________________________________________________________
+  
+  ```
+
+* 모델 구성
+
+  ```python
+  # Model fitting
+  # 모델 입력에 필요한 데이터 정리
+  train_user_ids = ratings_train.user_id.values
+  train_movie_ids = ratings_train.movie_id.values
+  train_ratings = ratings_train.rating.values
+  train_occs = train_occ.values
+  
+  test_user_ids = ratings_test.user_id.values
+  test_movie_ids = ratings_test.movie_id.values
+  test_ratings = ratings_test.rating.values
+  test_occs = test_occ.values
+  
+  #신경망 학습
+  result = model.fit(
+      x = [train_user_ids, train_movie_ids, train_occs],
+      y =  train_ratings - mu, #전체 평균 빼기 
+      epochs = 65,
+      batch_size = 512, #batch_size : 전체 train_set에서 512개씩 학습시키겠다.
+      validation_data = (
+          [test_user_ids, test_movie_ids, test_occs],
+          test_ratings- mu
+      )
+  )
+  
+  # 실행 결과
+  Epoch 1/65
+  157/157 [==============================] - 4s 21ms/step - loss: 5.3868 - RMSE: 1.1266 - val_loss: 5.2440 - val_RMSE: 1.1174
+  Epoch 2/65
+  157/157 [==============================] - 3s 20ms/step - loss: 5.1256 - RMSE: 1.1245 - val_loss: 4.9914 - val_RMSE: 1.1159
+  Epoch 3/65
+  157/157 [==============================] - 3s 20ms/step - loss: 4.8806 - RMSE: 1.1227 - val_loss: 4.7538 - val_RMSE: 1.1141
+  Epoch 4/65
+  157/157 [==============================] - 3s 21ms/step - loss: 4.6502 - RMSE: 1.1210 - val_loss: 4.5308 - val_RMSE: 1.1125
+  Epoch 5/65
+  157/157 [==============================] - 3s 21ms/step - loss: 4.4338 - RMSE: 1.1190 - val_loss: 4.3213 - val_RMSE: 1.1108
+  Epoch 6/65
+  157/157 [==============================] - 3s 20ms/step - loss: 4.2305 - RMSE: 1.1175 - val_loss: 4.1244 - val_RMSE: 1.1090
+  Epoch 7/65
+  157/157 [==============================] - 3s 20ms/step - loss: 4.0395 - RMSE: 1.1158 - val_loss: 3.9393 - val_RMSE: 1.1071
+  Epoch 8/65
+  157/157 [==============================] - 3s 20ms/step - loss: 3.8597 - RMSE: 1.1139 - val_loss: 3.7652 - val_RMSE: 1.1050
+  Epoch 9/65
+  157/157 [==============================] - 3s 21ms/step - loss: 3.6906 - RMSE: 1.1114 - val_loss: 3.6013 - val_RMSE: 1.1026
+  Epoch 10/65
+  157/157 [==============================] - 3s 21ms/step - loss: 3.5313 - RMSE: 1.1088 - val_loss: 3.4470 - val_RMSE: 1.0997
+  Epoch 11/65
+  157/157 [==============================] - 3s 20ms/step - loss: 3.3813 - RMSE: 1.1049 - val_loss: 3.3016 - val_RMSE: 1.0966
+  Epoch 12/65
+  157/157 [==============================] - 3s 21ms/step - loss: 3.2400 - RMSE: 1.1024 - val_loss: 3.1645 - val_RMSE: 1.0929
+  Epoch 13/65
+  157/157 [==============================] - 3s 21ms/step - loss: 3.1064 - RMSE: 1.0982 - val_loss: 3.0349 - val_RMSE: 1.0885
+  Epoch 14/65
+  157/157 [==============================] - 3s 21ms/step - loss: 2.9802 - RMSE: 1.0929 - val_loss: 2.9125 - val_RMSE: 1.0835
+  Epoch 15/65
+  157/157 [==============================] - 3s 21ms/step - loss: 2.8608 - RMSE: 1.0876 - val_loss: 2.7968 - val_RMSE: 1.0779
+  Epoch 16/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.7476 - RMSE: 1.0814 - val_loss: 2.6871 - val_RMSE: 1.0715
+  Epoch 17/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.6404 - RMSE: 1.0741 - val_loss: 2.5825 - val_RMSE: 1.0637
+  Epoch 18/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.5382 - RMSE: 1.0661 - val_loss: 2.4835 - val_RMSE: 1.0554
+  Epoch 19/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.4414 - RMSE: 1.0572 - val_loss: 2.3895 - val_RMSE: 1.0465
+  Epoch 20/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.3491 - RMSE: 1.0476 - val_loss: 2.3002 - val_RMSE: 1.0369
+  Epoch 21/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.2617 - RMSE: 1.0378 - val_loss: 2.2156 - val_RMSE: 1.0271
+  Epoch 22/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.1789 - RMSE: 1.0275 - val_loss: 2.1356 - val_RMSE: 1.0173
+  Epoch 23/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.1006 - RMSE: 1.0175 - val_loss: 2.0608 - val_RMSE: 1.0084
+  Epoch 24/65
+  157/157 [==============================] - 3s 20ms/step - loss: 2.0269 - RMSE: 1.0079 - val_loss: 1.9891 - val_RMSE: 0.9987
+  Epoch 25/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.9576 - RMSE: 0.9987 - val_loss: 1.9224 - val_RMSE: 0.9904
+  Epoch 26/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.8927 - RMSE: 0.9902 - val_loss: 1.8602 - val_RMSE: 0.9830
+  Epoch 27/65
+  157/157 [==============================] - 3s 19ms/step - loss: 1.8318 - RMSE: 0.9825 - val_loss: 1.8021 - val_RMSE: 0.9765
+  Epoch 28/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.7751 - RMSE: 0.9764 - val_loss: 1.7479 - val_RMSE: 0.9710
+  Epoch 29/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.7219 - RMSE: 0.9699 - val_loss: 1.6972 - val_RMSE: 0.9659
+  Epoch 30/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.6724 - RMSE: 0.9646 - val_loss: 1.6503 - val_RMSE: 0.9621
+  Epoch 31/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.6262 - RMSE: 0.9599 - val_loss: 1.6052 - val_RMSE: 0.9574
+  Epoch 32/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.5827 - RMSE: 0.9549 - val_loss: 1.5641 - val_RMSE: 0.9544
+  Epoch 33/65
+  157/157 [==============================] - 3s 21ms/step - loss: 1.5424 - RMSE: 0.9521 - val_loss: 1.5250 - val_RMSE: 0.9510
+  Epoch 34/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.5043 - RMSE: 0.9483 - val_loss: 1.4906 - val_RMSE: 0.9501
+  Epoch 35/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.4688 - RMSE: 0.9454 - val_loss: 1.4580 - val_RMSE: 0.9494
+  Epoch 36/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.4357 - RMSE: 0.9432 - val_loss: 1.4231 - val_RMSE: 0.9439
+  Epoch 37/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.4044 - RMSE: 0.9404 - val_loss: 1.3934 - val_RMSE: 0.9421
+  Epoch 38/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.3752 - RMSE: 0.9384 - val_loss: 1.3656 - val_RMSE: 0.9406
+  Epoch 39/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.3480 - RMSE: 0.9365 - val_loss: 1.3399 - val_RMSE: 0.9395
+  Epoch 40/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.3225 - RMSE: 0.9347 - val_loss: 1.3151 - val_RMSE: 0.9379
+  Epoch 41/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.2983 - RMSE: 0.9333 - val_loss: 1.2929 - val_RMSE: 0.9375
+  Epoch 42/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.2762 - RMSE: 0.9322 - val_loss: 1.2744 - val_RMSE: 0.9396
+  Epoch 43/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.2549 - RMSE: 0.9309 - val_loss: 1.2505 - val_RMSE: 0.9348
+  Epoch 44/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.2351 - RMSE: 0.9302 - val_loss: 1.2317 - val_RMSE: 0.9341
+  Epoch 45/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.2167 - RMSE: 0.9289 - val_loss: 1.2161 - val_RMSE: 0.9357
+  Epoch 46/65
+  157/157 [==============================] - 3s 19ms/step - loss: 1.1994 - RMSE: 0.9280 - val_loss: 1.1972 - val_RMSE: 0.9327
+  Epoch 47/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1831 - RMSE: 0.9273 - val_loss: 1.1827 - val_RMSE: 0.9334
+  Epoch 48/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1678 - RMSE: 0.9263 - val_loss: 1.1678 - val_RMSE: 0.9324
+  Epoch 49/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1536 - RMSE: 0.9266 - val_loss: 1.1542 - val_RMSE: 0.9322
+  Epoch 50/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1401 - RMSE: 0.9256 - val_loss: 1.1415 - val_RMSE: 0.9319
+  Epoch 51/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1275 - RMSE: 0.9253 - val_loss: 1.1285 - val_RMSE: 0.9307
+  Epoch 52/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1160 - RMSE: 0.9245 - val_loss: 1.1168 - val_RMSE: 0.9300
+  Epoch 53/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.1045 - RMSE: 0.9245 - val_loss: 1.1092 - val_RMSE: 0.9325
+  Epoch 54/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0943 - RMSE: 0.9241 - val_loss: 1.0960 - val_RMSE: 0.9293
+  Epoch 55/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0848 - RMSE: 0.9239 - val_loss: 1.0873 - val_RMSE: 0.9300
+  Epoch 56/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0755 - RMSE: 0.9236 - val_loss: 1.0808 - val_RMSE: 0.9324
+  Epoch 57/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0671 - RMSE: 0.9242 - val_loss: 1.0695 - val_RMSE: 0.9289
+  Epoch 58/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0586 - RMSE: 0.9230 - val_loss: 1.0626 - val_RMSE: 0.9298
+  Epoch 59/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0513 - RMSE: 0.9231 - val_loss: 1.0562 - val_RMSE: 0.9304
+  Epoch 60/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0438 - RMSE: 0.9227 - val_loss: 1.0572 - val_RMSE: 0.9381
+  Epoch 61/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0373 - RMSE: 0.9232 - val_loss: 1.0428 - val_RMSE: 0.9299
+  Epoch 62/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0310 - RMSE: 0.9226 - val_loss: 1.0356 - val_RMSE: 0.9287
+  Epoch 63/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0253 - RMSE: 0.9229 - val_loss: 1.0292 - val_RMSE: 0.9281
+  Epoch 64/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0200 - RMSE: 0.9229 - val_loss: 1.0243 - val_RMSE: 0.9285
+  Epoch 65/65
+  157/157 [==============================] - 3s 20ms/step - loss: 1.0147 - RMSE: 0.9230 - val_loss: 1.0276 - val_RMSE: 0.9367
+  ```
+
+* 최적 모델 그래프
+
+  ```python
+  #plot RMSE
+  import matplotlib.pyplot as plt 
+  plt.plot(result.history['RMSE'], label = 'Train RMSE')
+  plt.plot(result.history['val_RMSE'], label = 'Test RMSE')
+  plt.legend()
+  plt.show()
+  ```
+
+  ![](./image/6_4-1.png)
