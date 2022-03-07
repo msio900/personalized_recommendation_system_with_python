@@ -87,12 +87,12 @@
 * 하이브리드 추천 시스템의 원리
 * 하이브리드 추천 시스템(CF와 MF의 결합)
 
-### 섹션 8. 대규모 데이터의 처리를 위한 Sparse Matrix 사용[👉](./Section07.md)[⤴️](#contents)
+### 섹션 8. 대규모 데이터의 처리를 위한 Sparse Matrix 사용[👉](./Section08.md)[⤴️](#contents)
 
 * Sparse Matrix의 개념과 Python에서의 사용
 * Sparse Matrix를 추천 알고리즘에 적용하기
 
-### 섹션 9. 추천 시스템 구축에서의 이슈[⤴️](#contents)
+### 섹션 9. 추천 시스템 구축에서의 이슈[👉](./Section09.md)[⤴️](#contents)
 
 * 신규 사용자와 아이템(Cold Start Problem)
 * 확장성(Scalability)
