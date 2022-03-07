@@ -57,7 +57,7 @@
 * 사용자 기반 CF와 아이템 기반 CF
 * 추천 시스템의 성과측정지표
 
-### Section 4. Matrix Factorization(MF) 기반 추천[👉](./Section04.md)[⤴️](#contents)
+### Section 4. Matrix Factorization(MF) 기반 추천[👉](./Section04.md) | 코드자료[⌨️](./Recosys/Section04.ipynb) [⤴️](#contents)
 
 * Matrix Factorization(MF) 방식의 원리
 * SGD(Stochastic Gradient Decent)를 사용한 MF 알고리즘
@@ -66,7 +66,7 @@
 * MF의 최적 파라미터 찾기
 * MF와 SVD
 
-### Section 5. Surprise 패키지 사용[👉](./Section05.md)[⤴️](#contents)
+### Section 5. Surprise 패키지 사용[👉](./Section05.md) | 코드자료[⌨️](./Recosys/Section05.ipynb) [⤴️](#contents)
 
 * Surprise 기본 활용 방법
 * 알고리즘 비교
@@ -74,20 +74,20 @@
 * 다양한 조건의 비교
 * 외부 데이터 사용
 
-### Section 6. 딥러닝을 사용한 추천 시스템[👉](./Section06.md)[⤴️](#contents)
+### Section 6. 딥러닝을 사용한 추천 시스템[👉](./Section06.md) | 코드자료[⌨️](./Recosys/Section06.ipynb) [⤴️](#contents)
 
 * Matrix Factorization(MF)을 신경망으로 변환하기
 * Keras로 MF 구현하기
 * 딥러닝을 적용한 추천 시스템
 * 딥러닝 모델에 변수 추가하기
 
-### 섹션 7. 하이브리드 추천 시스템[👉](./Section07.md)[⤴️](#contents)
+### 섹션 7. 하이브리드 추천 시스템[👉](./Section07.md) | 코드자료[⌨️](./Recosys/Section07.ipynb) [⤴️](#contents)
 
 * 하이브리드 추천 시스템의 장점
 * 하이브리드 추천 시스템의 원리
 * 하이브리드 추천 시스템(CF와 MF의 결합)
 
-### 섹션 8. 대규모 데이터의 처리를 위한 Sparse Matrix 사용[⤴️](#contents)
+### 섹션 8. 대규모 데이터의 처리를 위한 Sparse Matrix 사용[👉](./Section07.md)[⤴️](#contents)
 
 * Sparse Matrix의 개념과 Python에서의 사용
 * Sparse Matrix를 추천 알고리즘에 적용하기
